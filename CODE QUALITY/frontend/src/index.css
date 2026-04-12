@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    @apply bg-navy-900 text-slate-100 font-sans antialiased;
+    background: radial-gradient(ellipse at 20% 0%, #1e2a47 0%, #0a0e1a 60%);
+    min-height: 100vh;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-navy-800;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-navy-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-brand-600;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-navy-800 bg-opacity-80 border border-slate-700/50 rounded-2xl shadow-card backdrop-blur-sm;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .glass-card:hover {
+    @apply shadow-glow;
+    transform: translateY(-2px);
+  }
+  .btn-primary {
+    @apply bg-brand-500 hover:bg-brand-600 text-white font-semibold px-5 py-2.5 rounded-xl
+           transition-all duration-200 shadow-glow hover:shadow-lg active:scale-95;
+  }
+  .btn-secondary {
+    @apply bg-navy-700 hover:bg-navy-600 text-slate-200 font-medium px-4 py-2 rounded-xl
+           border border-slate-600 transition-all duration-200 active:scale-95;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .input-field {
+    @apply bg-navy-700 border border-slate-600 text-slate-100 rounded-xl px-4 py-2.5
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
+           placeholder-slate-400 transition-all duration-200;
+  }
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400
+           hover:text-slate-100 hover:bg-navy-700 transition-all duration-200 font-medium;
+  }
+  .sidebar-link.active {
+    @apply text-brand-400 bg-navy-700 border border-brand-500/30;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease forwards;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.4s ease forwards;
+  }
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4,0,0.6,1) infinite;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
