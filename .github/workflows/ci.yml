@@ -1,26 +1,28 @@
-name: CI debug
+name: Refresh lockfile (temporary)
 on: push
+permissions:
+  contents: write
 jobs:
-  npmci:
+  lock:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node: [22, 24]
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
-      - name: npm ci
+          node-version: 22
+      - name: Regenerate frontend lockfile and run checks
+        working-directory: frontend
         run: |
           set +e
-          npm -v
-          npm ci > ci.log 2>&1
-          code=$?
-          msg=$(grep -E "npm (error|ERR)" ci.log | head -15 | sed ':a;N;$!ba;s/\n/%0A/g')
-          echo "::warning title=node ${{ matrix.node }} npm $(npm -v) exit $code::${msg:-ok}"
-          exit 0
+          npm install --package-lock-only --ignore-scripts > lock.log 2>&1; echo "::warning title=lock exit $?::$(tail -5 lock.log | sed ':a;N;$!ba;s/\n/%0A/g')"
+          npm ci > ci.log 2>&1; echo "::warning title=ci exit $?::$(grep -E 'npm (error|warn)' ci.log | head -10 | sed ':a;N;$!ba;s/\n/%0A/g')"
+          npx eslint . > lint.log 2>&1; echo "::warning title=lint exit $?::$(head -60 lint.log | sed ':a;N;$!ba;s/\n/%0A/g')"
+          npm test > test.log 2>&1; echo "::warning title=test exit $?::$(grep -E '^# (tests|pass|fail)' test.log | sed ':a;N;$!ba;s/\n/%0A/g')"
+          npm run build > build.log 2>&1; echo "::warning title=build exit $?::$(tail -15 build.log | sed ':a;N;$!ba;s/\n/%0A/g')"
+          rm -f *.log
+      - name: Commit regenerated lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/package-lock.json
+          git commit -m "Regenerate frontend lockfile" && git push || echo "nothing to commit"
