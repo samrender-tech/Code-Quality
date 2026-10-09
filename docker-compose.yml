@@ -1,0 +1,21 @@
+# Local SonarQube server for the Code Quality Analyzer.
+# Start:  docker compose up -d      → http://localhost:9000 (login admin / admin)
+# Stop:   docker compose down       (add -v to also delete analysis data)
+services:
+  sonarqube:
+    image: sonarqube:community
+    container_name: cqa-sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      # Skips Elasticsearch host checks so it runs on a laptop without kernel tweaks.
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:

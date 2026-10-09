@@ -1,0 +1,16 @@
+{
+  "name": "code-quality-analyzer",
+  "version": "1.1.0",
+  "private": true,
+  "description": "SonarQube-powered code quality dashboard with grading, alerts and trend charts.",
+  "license": "MIT",
+  "scripts": {
+    "setup": "npm ci --prefix backend && npm ci --prefix frontend",
+    "api": "npm run dev --prefix backend",
+    "api:demo": "npm run demo --prefix backend",
+    "web": "npm run dev --prefix frontend",
+    "test": "npm test --prefix backend && npm test --prefix frontend",
+    "lint": "npm run lint --prefix frontend",
+    "build": "npm run build --prefix frontend"
+  }
+}

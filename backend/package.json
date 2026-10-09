@@ -1,0 +1,30 @@
+{
+  "name": "code-quality-analyzer-api",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Express API that wraps the SonarQube Web API for the Code Quality Analyzer dashboard.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "demo": "node --watch src/server.js --demo",
+    "test": "node --test"
+  },
+  "keywords": [
+    "sonarqube",
+    "code-quality",
+    "express",
+    "static-analysis"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.15.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1"
+  }
+}
