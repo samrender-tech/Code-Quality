@@ -29,7 +29,7 @@ export default function MetricsBarChart({ measures }) {
     { name: 'Vulns', value: parseInt(measures?.vulnerabilities) || 0, key: 'vulnerabilities' },
     { name: 'Smells', value: parseInt(measures?.code_smells) || 0, key: 'code_smells' },
     { name: 'Coverage %', value: parseFloat(measures?.coverage) || 0, key: 'coverage' },
-    { name: 'Duplication %', value: parseFloat(measures?.duplicated_lines_density) || 0, key: 'duplicated_lines_density' },
+    { name: 'Dup. %', value: parseFloat(measures?.duplicated_lines_density) || 0, key: 'duplicated_lines_density' },
   ];
 
   return (
@@ -40,6 +40,7 @@ export default function MetricsBarChart({ measures }) {
           <CartesianGrid strokeDasharray="3 3" stroke="#1e2a47" vertical={false} />
           <XAxis
             dataKey="name"
+            interval={0}
             tick={{ fill: '#94a3b8', fontSize: 11 }}
             axisLine={false}
             tickLine={false}
