@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_URL,
   timeout: 15000,
 });
 
@@ -18,13 +18,18 @@ export const checkConnection = async () => {
   return res.data;
 };
 
-// ─── Measures ────────────────────────────────────────────────────────────────
+// ─── Measures ───────────────────────────────────────────────────────────────
 export const fetchMeasures = async (projectKey) => {
   const res = await api.get('/api/measures', { params: { projectKey } });
   return res.data;
 };
 
-// ─── Issues ──────────────────────────────────────────────────────────────────
+export const fetchHistory = async (projectKey) => {
+  const res = await api.get('/api/measures/history', { params: { projectKey } });
+  return res.data.history;
+};
+
+// ─── Issues ─────────────────────────────────────────────────────────────────
 export const fetchIssues = async (projectKey, filters = {}) => {
   const res = await api.get('/api/issues', {
     params: { projectKey, ...filters },

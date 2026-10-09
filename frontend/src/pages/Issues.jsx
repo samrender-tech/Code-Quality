@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import {
   Bug, ShieldAlert, Wind, ChevronLeft, ChevronRight,
-  SlidersHorizontal, AlertCircle, ExternalLink,
+  SlidersHorizontal, AlertCircle,
 } from 'lucide-react';
+import useApi from '../hooks/useApi';
 import { fetchIssues } from '../services/api';
 
 const TYPE_CONFIG = {
@@ -21,39 +22,36 @@ const SEVERITY_COLORS = {
 };
 
 const PAGE_SIZE = 20;
+const PAGE_BUTTONS = 5;
+
+/** Page numbers to show: a window of up to 5 pages around the current one. */
+function pageWindow(page, totalPages) {
+  const count = Math.min(PAGE_BUTTONS, totalPages);
+  const start = Math.max(1, Math.min(page - Math.floor(PAGE_BUTTONS / 2), totalPages - count + 1));
+  return Array.from({ length: count }, (_, i) => start + i);
+}
 
 export default function Issues({ projectKey }) {
-  const [issues, setIssues] = useState([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [typeFilter, setTypeFilter] = useState('');
   const [severityFilter, setSeverityFilter] = useState('');
 
-  const load = useCallback(async () => {
-    if (!projectKey) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const filters = {
-        ...(typeFilter && { types: typeFilter }),
-        ...(severityFilter && { severities: severityFilter }),
-        p: page,
-        ps: PAGE_SIZE,
-      };
-      const data = await fetchIssues(projectKey, filters);
-      setIssues(data.issues || []);
-      setTotal(data.total || 0);
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [projectKey, typeFilter, severityFilter, page]);
+  const filters = {
+    ...(typeFilter && { types: typeFilter }),
+    ...(severityFilter && { severities: severityFilter }),
+    p: page,
+    ps: PAGE_SIZE,
+  };
+  const requestKey = projectKey ? JSON.stringify([projectKey, typeFilter, severityFilter, page]) : null;
+  const { data, previousData, loading, error } = useApi(() => fetchIssues(projectKey, filters), requestKey);
 
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { setPage(1); }, [typeFilter, severityFilter, projectKey]);
+  const issues = data?.issues || [];
+  // Keep the last known total while the next page loads so the pager doesn't jump.
+  const total = (data ?? previousData)?.total || 0;
+
+  // Changing a filter always starts again from the first page.
+  const changeType = (value) => { setTypeFilter(value); setPage(1); };
+  const changeSeverity = (value) => { setSeverityFilter(value); setPage(1); };
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -74,7 +72,7 @@ export default function Issues({ projectKey }) {
         <div>
           <h2 className="text-xl font-bold text-white">Issues</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            {total > 0 ? `${total.toLocaleString()} issues found` : 'No issues found'}
+            {loading && !previousData ? 'Loading…' : total > 0 ? `${total.toLocaleString()} issues found` : 'No issues found'}
           </p>
         </div>
       </div>
@@ -86,7 +84,8 @@ export default function Issues({ projectKey }) {
 
         <select
           value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
+          onChange={(e) => changeType(e.target.value)}
+          aria-label="Filter by type"
           className="input-field text-sm py-1.5 pr-8"
         >
           <option value="">All Types</option>
@@ -98,7 +97,8 @@ export default function Issues({ projectKey }) {
 
         <select
           value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value)}
+          onChange={(e) => changeSeverity(e.target.value)}
+          aria-label="Filter by severity"
           className="input-field text-sm py-1.5 pr-8"
         >
           <option value="">All Severities</option>
@@ -111,7 +111,7 @@ export default function Issues({ projectKey }) {
 
         {(typeFilter || severityFilter) && (
           <button
-            onClick={() => { setTypeFilter(''); setSeverityFilter(''); }}
+            onClick={() => { setTypeFilter(''); setSeverityFilter(''); setPage(1); }}
             className="text-xs text-brand-400 hover:text-brand-300 transition-colors"
           >
             Clear filters
@@ -121,8 +121,8 @@ export default function Issues({ projectKey }) {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl px-4 py-3 text-sm">
-          ⚠️ {error}
+        <div role="alert" className="bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl px-4 py-3 text-sm">
+          {error}
         </div>
       )}
 
@@ -207,28 +207,27 @@ export default function Issues({ projectKey }) {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
+              aria-label="Previous page"
               className="btn-secondary p-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronLeft size={16} />
             </button>
-            {[...Array(Math.min(5, totalPages))].map((_, i) => {
-              const pg = i + Math.max(1, page - 2);
-              if (pg > totalPages) return null;
-              return (
-                <button
-                  key={pg}
-                  onClick={() => setPage(pg)}
-                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                    pg === page ? 'bg-brand-500 text-white' : 'btn-secondary'
-                  }`}
-                >
-                  {pg}
-                </button>
-              );
-            })}
+            {pageWindow(page, totalPages).map((pg) => (
+              <button
+                key={pg}
+                onClick={() => setPage(pg)}
+                aria-current={pg === page ? 'page' : undefined}
+                className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                  pg === page ? 'bg-brand-500 text-white' : 'btn-secondary'
+                }`}
+              >
+                {pg}
+              </button>
+            ))}
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
+              aria-label="Next page"
               className="btn-secondary p-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronRight size={16} />

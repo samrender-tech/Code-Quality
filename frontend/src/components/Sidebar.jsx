@@ -1,10 +1,9 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Bug,
   Settings,
   Activity,
-  GitBranch,
   Zap,
   ChevronRight,
 } from 'lucide-react';
@@ -15,7 +14,15 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
-export default function Sidebar({ connected, projectName }) {
+function connectionLabel(connected, mode) {
+  if (!connected) return { text: 'Not connected', dot: 'bg-red-400' };
+  if (mode === 'demo') return { text: 'Demo mode', dot: 'bg-amber-400' };
+  return { text: 'SonarQube connected', dot: 'bg-emerald-400' };
+}
+
+export default function Sidebar({ connected, mode, projectName }) {
+  const status = connectionLabel(connected, mode);
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-navy-900 border-r border-slate-700/50 flex flex-col z-40">
       {/* Logo */}
@@ -34,14 +41,8 @@ export default function Sidebar({ connected, projectName }) {
       {/* Connection status */}
       <div className="px-4 py-3 mx-3 mt-4 rounded-xl bg-navy-800 border border-slate-700/30">
         <div className="flex items-center gap-2">
-          <span
-            className={`w-2 h-2 rounded-full animate-pulse-slow ${
-              connected ? 'bg-emerald-400' : 'bg-red-400'
-            }`}
-          />
-          <span className="text-xs text-slate-400">
-            {connected ? 'SonarQube Connected' : 'Not Connected'}
-          </span>
+          <span className={`w-2 h-2 rounded-full animate-pulse-slow ${status.dot}`} />
+          <span className="text-xs text-slate-400">{status.text}</span>
         </div>
         {projectName && (
           <p className="text-xs text-slate-500 mt-1 truncate pl-4">{projectName}</p>
@@ -74,10 +75,6 @@ export default function Sidebar({ connected, projectName }) {
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <Zap size={13} className="text-brand-400" />
           <span>Powered by SonarQube</span>
-        </div>
-        <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-          <GitBranch size={13} />
-          <span>v1.0.0</span>
         </div>
       </div>
     </aside>

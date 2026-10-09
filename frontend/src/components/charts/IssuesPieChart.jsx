@@ -2,12 +2,11 @@ import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 
-const COLORS = ['#ef4444', '#f97316', '#eab308', '#6366f1'];
-const TYPE_LABELS = {
-  BUG: 'Bugs',
-  VULNERABILITY: 'Vulnerabilities',
-  CODE_SMELL: 'Code Smells',
-  SECURITY_HOTSPOT: 'Hotspots',
+// Colour by issue type so a slice keeps its colour when another type has zero issues.
+const TYPE_COLORS = {
+  BUG: '#ef4444',
+  VULNERABILITY: '#f97316',
+  CODE_SMELL: '#eab308',
 };
 
 const CustomTooltip = ({ active, payload }) => {
@@ -75,10 +74,10 @@ export default function IssuesPieChart({ measures }) {
             paddingAngle={3}
             dataKey="value"
           >
-            {data.map((entry, index) => (
+            {data.map((entry) => (
               <Cell
-                key={`cell-${index}`}
-                fill={COLORS[index % COLORS.length]}
+                key={entry.type}
+                fill={TYPE_COLORS[entry.type]}
                 fillOpacity={0.9}
                 stroke="transparent"
               />

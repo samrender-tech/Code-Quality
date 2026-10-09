@@ -1,27 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Save, RefreshCw, Wifi, WifiOff, Settings as SettingsIcon } from 'lucide-react';
-import { checkConnection } from '../services/api';
+import { API_URL, checkConnection } from '../services/api';
+import { errorMessage } from '../hooks/useApi';
+import { loadThresholds, saveThresholds } from '../utils/thresholds';
 
-const THRESHOLDS_KEY = 'cqa_thresholds';
-const SONAR_URL_KEY = 'cqa_sonar_url';
+const toCount = (value) => Math.max(0, Number.parseInt(value, 10) || 0);
 
 export default function Settings() {
-  const [thresholds, setThresholds] = useState({ bugs: 5, vulnerabilities: 1 });
-  const [saved, setSaved] = useState(false);
+  const [thresholds, setThresholds] = useState(loadThresholds);
+  const [saveState, setSaveState] = useState(null); // 'saved' | 'failed' | null
   const [connStatus, setConnStatus] = useState(null);
   const [connLoading, setConnLoading] = useState(false);
 
-  useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem(THRESHOLDS_KEY));
-      if (stored) setThresholds(stored);
-    } catch {}
-  }, []);
-
   const save = () => {
-    localStorage.setItem(THRESHOLDS_KEY, JSON.stringify(thresholds));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setSaveState(saveThresholds(thresholds) ? 'saved' : 'failed');
+    setTimeout(() => setSaveState(null), 2500);
   };
 
   const testConn = async () => {
@@ -29,9 +22,9 @@ export default function Settings() {
     setConnStatus(null);
     try {
       const data = await checkConnection();
-      setConnStatus({ ok: true, version: data.version, status: data.status });
+      setConnStatus({ ok: true, version: data.version, status: data.status, mode: data.mode });
     } catch (err) {
-      setConnStatus({ ok: false, error: err.response?.data?.error || err.message });
+      setConnStatus({ ok: false, error: errorMessage(err) });
     } finally {
       setConnLoading(false);
     }
@@ -56,27 +49,29 @@ export default function Settings() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-2">
+            <label htmlFor="threshold-bugs" className="block text-xs font-medium text-slate-400 mb-2">
               Bug Count Threshold
             </label>
             <input
+              id="threshold-bugs"
               type="number"
               min={0}
               value={thresholds.bugs}
-              onChange={(e) => setThresholds((t) => ({ ...t, bugs: parseInt(e.target.value) || 0 }))}
+              onChange={(e) => setThresholds((t) => ({ ...t, bugs: toCount(e.target.value) }))}
               className="input-field w-full"
             />
             <p className="text-xs text-slate-600 mt-1">Alert if bugs &gt; this value</p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-2">
+            <label htmlFor="threshold-vulns" className="block text-xs font-medium text-slate-400 mb-2">
               Vulnerability Threshold
             </label>
             <input
+              id="threshold-vulns"
               type="number"
               min={0}
               value={thresholds.vulnerabilities}
-              onChange={(e) => setThresholds((t) => ({ ...t, vulnerabilities: parseInt(e.target.value) || 0 }))}
+              onChange={(e) => setThresholds((t) => ({ ...t, vulnerabilities: toCount(e.target.value) }))}
               className="input-field w-full"
             />
             <p className="text-xs text-slate-600 mt-1">Alert if vulnerabilities &gt; this value</p>
@@ -88,8 +83,11 @@ export default function Settings() {
             <Save size={14} />
             Save Thresholds
           </button>
-          {saved && (
-            <span className="text-xs text-emerald-400 animate-fade-in">✓ Saved!</span>
+          {saveState === 'saved' && (
+            <span className="text-xs text-emerald-400 animate-fade-in">✓ Saved</span>
+          )}
+          {saveState === 'failed' && (
+            <span className="text-xs text-red-400 animate-fade-in">Could not save in this browser</span>
           )}
         </div>
       </div>
@@ -104,10 +102,10 @@ export default function Settings() {
         <div className="bg-navy-700 rounded-xl p-4 space-y-2 text-xs font-mono">
           <p className="text-slate-400">
             Backend URL:{' '}
-            <span className="text-brand-400">{import.meta.env.VITE_API_URL || 'http://localhost:4000'}</span>
+            <span className="text-brand-400">{API_URL}</span>
           </p>
           <p className="text-slate-500 text-xs">
-            To change the SonarQube URL or token, edit{' '}
+            To change the SonarQube URL or token, or to switch demo mode on or off, edit{' '}
             <code className="text-slate-300">backend/.env</code>
           </p>
         </div>
@@ -133,7 +131,9 @@ export default function Settings() {
               <div className="flex items-center gap-2">
                 <Wifi size={14} />
                 <span>
-                  Connected! SonarQube {connStatus.version} — Status: {connStatus.status}
+                  {connStatus.mode === 'demo'
+                    ? 'Connected to the API in demo mode (sample data).'
+                    : `Connected to SonarQube ${connStatus.version} (status: ${connStatus.status})`}
                 </span>
               </div>
             ) : (
