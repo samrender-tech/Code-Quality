@@ -11,6 +11,21 @@ A full-stack dashboard that turns raw **SonarQube** static-analysis results into
 
 SonarQube's own UI is built for engineers digging into individual rules. This project answers the questions a lead or reviewer asks first: *Is this project healthy? Is it getting better or worse? What should we fix first?*
 
+![Dashboard showing grades, ratings, charts and the quality trend for a project](docs/screenshots/dashboard.png)
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/dashboard-failing.png" alt="Alerts for a project that fails its quality gate"></td>
+    <td><img src="docs/screenshots/issues.png" alt="Issue explorer with type and severity filters"></td>
+  </tr>
+  <tr>
+    <td align="center">Alerts for a project failing its quality gate</td>
+    <td align="center">Issue explorer with filters</td>
+  </tr>
+</table>
+
+<sub>Screenshots use the built-in demo data.</sub>
+
 ## Features
 
 - **Project health at a glance**: bugs, vulnerabilities, code smells, coverage, duplication and lines of code, with SonarQube's reliability, security and maintainability ratings shown as A–E.
