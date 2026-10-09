@@ -1,28 +1,32 @@
-name: Refresh lockfile (temporary)
+name: Screenshots (temporary)
 on: push
 permissions:
   contents: write
 jobs:
-  lock:
+  shots:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Regenerate frontend lockfile and run checks
-        working-directory: frontend
+      - run: npm ci --prefix backend && npm ci --prefix frontend
+      - run: npm run build --prefix frontend
+      - name: Start API (demo mode) and the built dashboard
         run: |
-          set +e
-          npm install --package-lock-only --ignore-scripts > lock.log 2>&1; echo "::warning title=lock exit $?::$(tail -5 lock.log | sed ':a;N;$!ba;s/\n/%0A/g')"
-          npm ci > ci.log 2>&1; echo "::warning title=ci exit $?::$(grep -E 'npm (error|warn)' ci.log | head -10 | sed ':a;N;$!ba;s/\n/%0A/g')"
-          npx eslint . > lint.log 2>&1; echo "::warning title=lint exit $?::$(head -60 lint.log | sed ':a;N;$!ba;s/\n/%0A/g')"
-          npm test > test.log 2>&1; echo "::warning title=test exit $?::$(grep -E '^# (tests|pass|fail)' test.log | sed ':a;N;$!ba;s/\n/%0A/g')"
-          npm run build > build.log 2>&1; echo "::warning title=build exit $?::$(tail -15 build.log | sed ':a;N;$!ba;s/\n/%0A/g')"
-          rm -f *.log
-      - name: Commit regenerated lockfile
+          cd backend && CORS_ORIGIN='*' nohup node src/server.js --demo > /tmp/api.log 2>&1 &
+          cd frontend && nohup npx vite preview --port 4173 --strictPort > /tmp/web.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:4000/health && curl -sf -o /dev/null http://localhost:4173 && break; sleep 1; done
+      - name: Capture screenshots
+        run: |
+          mkdir -p /tmp/pw && cd /tmp/pw && npm init -y > /dev/null && npm i playwright@1 > /dev/null 2>&1
+          npx playwright install --with-deps chromium > /dev/null 2>&1
+          cd "$GITHUB_WORKSPACE" && NODE_PATH=/tmp/pw/node_modules cp .github/shots/shoot.mjs /tmp/pw/shoot.mjs && cd /tmp/pw && sed -i "s#docs/screenshots#$GITHUB_WORKSPACE/docs/screenshots#g" shoot.mjs && node shoot.mjs > /tmp/shot.log 2>&1
+          echo "::warning title=shots exit $?::$(tail -20 /tmp/shot.log | sed ':a;N;$!ba;s/\n/%0A/g')%0A$(ls -la $GITHUB_WORKSPACE/docs/screenshots 2>&1 | sed ':a;N;$!ba;s/\n/%0A/g')"
+          echo "::warning title=api log::$(tail -5 /tmp/api.log | sed ':a;N;$!ba;s/\n/%0A/g')"
+      - name: Commit screenshots
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/package-lock.json
-          git commit -m "Regenerate frontend lockfile" && git push || echo "nothing to commit"
+          git add docs/screenshots
+          git commit -m "Add screenshots" && git push || echo "nothing to commit"
